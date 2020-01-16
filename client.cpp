@@ -16,14 +16,13 @@ extern int errno;
 using namespace std;
 int port; 
 
-void Server_Communication(char a[6][7], string s) {
+void Convert_Board(char a[6][7], string s){
     int i, j, k = 0;
     for(i = 0; i < 6; i++) {
         for(j = 0; j < 7; j++)
             a[i][j] = s[k++];
     }
 }
-
 
 void Print_Board(char A[7][7]){
     int i, j;
@@ -44,6 +43,7 @@ int main(int argc, char *argv[]){
 	int sd;
 	struct sockaddr_in server;
 	char to_server[100];
+	char from_server[100];
 
 	if(argc != 3)
 	{
@@ -63,56 +63,202 @@ int main(int argc, char *argv[]){
 	server.sin_addr.s_addr = inet_addr(argv[1]);
 	server.sin_port = htons (port);
 
-	if (connect (sd, (struct sockaddr *) &server,sizeof (struct sockaddr)) == -1)
+	if(connect(sd, (struct sockaddr *)&server, sizeof(struct sockaddr)) == -1)
 	{
-	  perror ("[client]Eroare la connect().\n");
+	  perror("[client]Eroare la connect().\n");
 	  return errno;
 	}
 
 	char board[6][7];
 	string s;
-	s.resize(100);
-	if(read (sd, &s[0], s.size()) < 0)
-    {
-        perror ("[client]Eroare la read() de la server.\n");
-        return errno;
-    }
-    Server_Communication(board, s);
-    Print_Board(board);
-    cout << endl;
-    while(1) {
+	read(sd, to_server, 100);
+	if(strcmp(to_server, "You are first") == 0){
+		printf("%s\n", to_server);
+		s.resize(100);
+		if(read(sd, &s[0], s.size()) < 0)
+	    {
+	        perror("[client]Eroare la read() de la server.\n");
+	        return errno;
+	    }
 
-        bzero (to_server, 100);
-        printf ("[client]Introduceti mutarea dorita: ");
-        fflush (stdout);
-        read(0, to_server, 100);
-        if (write(sd, to_server, 100) <= 0)
+	    Convert_Board(board, s);
+	    Print_Board(board);
+	    cout << endl;
+	}
+	else if(strcmp(to_server, "Wait for your oponent to make a move!") == 0){
+		printf("%s\n", to_server);
+	}
+    while(1){
+     //    bzero(to_server, 100);
+     //    printf ("[client]Introduceti mutarea dorita: ");
+     //    fflush(stdout);
+     //    read(0, to_server, 100);
+     //    if(write(sd, to_server, 100) <= 0)
+     //    {
+     //        perror("[client]Eroare la write() spre server.\n");
+     //        return errno;
+     //    }
+
+     //    if(strcmp(to_server, "exit game\n") == 0)
+     //    	break;
+
+     //    if(read(sd, to_server, 100) < 0)
+     //    {
+     //        perror("[client]Eroare la read() de la server.\n");
+     //        return errno;
+     //    }
+
+     //    if(strcmp(from_server, "Column out of range. Try another one") != 0 && strcmp(from_server, "Full column. Try another one") != 0 && strcmp(from_server, "Command not found. Try another one") != 0){
+	    // 	printf("%s: \n", from_server);
+	    // 	if(strcmp(from_server, "Move done. Wait for your oponent to make a move!") == 0){
+	    // 		s.resize(100);
+			  //   if (read (sd, &s[0], s.size()) < 0)
+			  //   {
+			  //       perror ("[client]Eroare la read() de la server.\n");
+			  //       return errno;
+			  //   }
+	    // 		Convert_Board(board, s);
+	    // 		Print_Board(board);
+	    //     	printf("%s\n", from_server);
+	    //     }
+	    //     if(strcmp(from_server, "Your oponent leaved the game. You Win!") == 0){
+	    //    		printf("%s\n", from_server);
+	    //    		break;
+	    //    	}
+	    //     if(strcmp(from_server, "Wait for your oponent to make a move!") == 0)
+	    //     	printf("%s\n", from_server);
+	    //    	if(strcmp(from_server, "You Win!") == 0 || strcmp(from_server, "You oponent Win! Sorry!") == 0){
+	    //    		printf("%s\n", from_server);
+	    //    		break;
+	    //    	}	
+	    // }
+
+    	if(read(sd, from_server, 100) < 0)
         {
-            perror ("[client]Eroare la write() spre server.\n");
+            perror("[client]Eroare la read() de la server.\n");
             return errno;
         }
 
-        if(strcmp(to_server, "exit game\n") == 0)
-        	break;
+      
 
-        if(read(sd, to_server, 100) < 0)
+        if(strcmp(from_server, "You left the game!") == 0 || strcmp(from_server, "Your oponent leaved the game. You Win!") == 0)
         {
-            perror ("[client]Eroare la read() de la server.\n");
-            return errno;
-        }
-        cout << to_server << endl;
-        if(strcmp(to_server, "Column out of range. Try another one!") == 0 || strcmp(to_server, "Full column. Try another one!") == 0){
-        	printf("%s\n", to_server);
+
+        printf("%s\n", from_server);break;
+        }	
+
+        if(strcmp(from_server, "You Win!") == 0 || strcmp(from_server, "You oponent Win! Sorry!") == 0)
+        {
+        	
+        printf("%s\n", from_server);
+        s.resize(100);
+		    if (read (sd, &s[0], s.size()) < 0)
+		    {
+		        perror ("[client]Eroare la read() de la server.\n");
+		        return errno;
+		    }
+		    Convert_Board(board, s);
+		    Print_Board(board);
+		    cout << endl;
+        break;
+        }	
+
+
+        if(strcmp(from_server, "Move done. Wait for your oponent to make a move!") == 0){
+        	printf("%s\n", from_server);
         	s.resize(100);
 		    if (read (sd, &s[0], s.size()) < 0)
 		    {
 		        perror ("[client]Eroare la read() de la server.\n");
 		        return errno;
 		    }
-		    Server_Communication(board, s);
+		    Convert_Board(board, s);
+		    Print_Board(board);
+		    cout << endl;
+        }
+        if(strcmp(from_server, "Column out of range. Try another one") == 0 || strcmp(from_server, "Full column. Try another one") == 0 || strcmp(from_server, "Command not found. Try another one") == 0 || strcmp(from_server, "Is your turn. Make a move") == 0)
+        {
+        	printf("%s: ", from_server);
+        	read(0, to_server, 100);
+        	// printf("\n");
+		    if(write(sd, to_server, 100) <= 0)
+		    {
+		        perror("[client]Eroare la write() spre server.\n");
+		        return errno;
+		    }
+        }
+
+        if(strcmp(from_server, "ok") == 0)
+        {printf("%s\n", from_server);
+        	s.resize(100);
+		    if(read (sd, &s[0], s.size()) < 0)
+		    {
+		        perror ("[client]Eroare la read() de la server.\n");
+		        return errno;
+		    }
+		    Convert_Board(board, s);
 		    Print_Board(board);
 		    cout << endl;
         }
     }
+
+	// char board[6][7];
+	// string s;
+	// s.resize(100);
+	// if(read(sd, &s[0], s.size()) < 0)
+ //    {
+ //        perror("[client]Eroare la read() de la server.\n");
+ //        return errno;
+ //    }
+
+ //    Convert_Board(board, s);
+ //    Print_Board(board);
+ //    cout << endl;
+   
+ //    while(1){
+ //    	bzero(from_server, 100);
+ //    	printf ("[client]Introduceti mutarea dorita: ");
+ //        read(0, to_server, 100);
+ //        if(write(sd, to_server, 100) <= 0)
+ //        {
+ //            perror("[client]Eroare la write() spre server.\n");
+ //            return errno;
+ //        }
+
+ //        if(strcmp(to_server, "exit game\n") == 0)
+ //        	break;
+
+ //        if(read(sd, from_server, 100) < 0)
+ //        {
+ //            perror("[client]Eroare la read() de la server.\n");
+ //            return errno;
+ //        }
+
+ //        if(strcmp(from_server, "Column out of range. Try another one") != 0 && strcmp(from_server, "Full column. Try another one") != 0 && strcmp(from_server, "Command not found. Try another one") != 0){
+ //        	printf("%s: \n", from_server);
+ //        	if(strcmp(from_server, "Move done. Wait for your oponent to make a move!") == 0){
+ //        		s.resize(100);
+	// 		    if (read (sd, &s[0], s.size()) < 0)
+	// 		    {
+	// 		        perror ("[client]Eroare la read() de la server.\n");
+	// 		        return errno;
+	// 		    }
+ //        		Convert_Board(board, s);
+ //        		Print_Board(board);
+	//         	printf("%s\n", from_server);
+	//         }
+	//         if(strcmp(from_server, "Your oponent leaved the game. You Win!") == 0){
+	//        		printf("%s\n", from_server);
+	//        		break;
+	//        	}
+	//         if(strcmp(from_server, "Wait for your oponent to make a move!") == 0)
+	//         	printf("%s\n", from_server);
+	//        	if(strcmp(from_server, "You Win!") == 0 || strcmp(from_server, "You oponent Win! Sorry!") == 0){
+	//        		printf("%s\n", from_server);
+	//        		break;
+	//        	}	
+ //        }
+
+ //    }
     close(sd);
 }
