@@ -50,15 +50,15 @@ int isConnect(){
 		for(j = 0; j < 7; j++){
 			if(board[i][j] != ' '){
 				//verify horizontal right
-				int nr_pieces = 0;
-				if(board[i][j - 1] != board[i][j])
+				int nr_pieces = 1;
+				if(board[i][j - 1] != board[i][j] || (j - 1) < 0)
 					for(int k = 1; k < 4; k++)
 						if((j + k) < 7 && board[i][j] == board[i][j + k])
 							nr_pieces++;
 				if(nr_pieces == 4)
 					return 1;
 				//verify horizontal left
-				nr_pieces = 0;
+				nr_pieces = 1;
 				if(board[i][j + 1] != board[i][j])
 					for(int k = 1; k < 4; k++)
 						if((j - k) >= 0 && board[i][j] == board[i][j - k])
@@ -66,7 +66,7 @@ int isConnect(){
 				if(nr_pieces == 4)
 					return 1;
 				//verify vertical up
-				nr_pieces = 0;
+				nr_pieces = 1;
 				if(board[i + 1][j] != board[i][j])
 					for(int k = 1; k < 4; k++)
 						if((i - k) >= 0 && board[i - k][j] == board[i][j])
@@ -74,7 +74,7 @@ int isConnect(){
 				if(nr_pieces == 4)
 					return 1;
 				//verify vertical down
-				nr_pieces = 0;
+				nr_pieces = 1;
 				if(board[i - 1][j] != board[i][j])
 					for(int k = 1; k < 4; k++)
 						if((i + k) < 6 && board[i + k][j] == board[i][j])
@@ -82,7 +82,7 @@ int isConnect(){
 				if(nr_pieces == 4)
 					return 1;
 				//verify diagonal up left
-				nr_pieces = 0;
+				nr_pieces = 1;
 				if(board[i + 1][j + 1] != board[i][j])
 					for(int k = 1; k < 4; k++)
 						if((i - k) >= 0 && (j - k) >= 0 && board[i - k][j - k] == board[i][j])
@@ -90,7 +90,7 @@ int isConnect(){
 				if(nr_pieces == 4)
 					return 1;
 				//verify diagonal up right
-				nr_pieces = 0;
+				nr_pieces = 1;
 				if(board[i + 1][j - 1] != board[i][j])
 					for(int k = 1; k < 4; k++)
 						if((i - k) >= 0 && (j + k) < 7 && board[i - k][j + k] == board[i][j])
@@ -98,7 +98,7 @@ int isConnect(){
 				if(nr_pieces == 4)
 					return 1;
 				//verify diagonal down left
-				nr_pieces = 0;
+				nr_pieces = 1;
 				if(board[i - 1][j + 1] != board[i][j])
 					for(int k = 1; k < 4; k++)
 						if((i + k) < 6 && (j - k) >= 0 && board[i + k][j - k] == board[i][j])
@@ -106,7 +106,7 @@ int isConnect(){
 				if(nr_pieces == 4)
 					return 1;
 				//verify diagonal down right
-				nr_pieces = 0;
+				nr_pieces = 1;
 				if(board[i - 1][j - 1] != board[i][j])
 					for(int k = 1; k < 4; k++)
 						if((i + k) < 6 && (j + k) < 7 && board[i + k][j + k] == board[i][j])
