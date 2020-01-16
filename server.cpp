@@ -131,89 +131,38 @@ char * conv_addr(struct sockaddr_in address)
     strcat (str, port);
     return (str);
 }
+
 int ok = 0;
 int Client_Communication(int fd, char player){
 	char buffer[1000];
 	int bytes;
 	char from_client[100]; 
-	char to_client[100]=" ";
+	char to_client[100] = "";
 	ok = 0;
 	bytes = read(fd, from_client, sizeof(buffer));
+	printf("%s\n", from_client);
 	if(bytes < 0)
 	{
 	  perror ("Error to read() from client.\n");
 	  return 0;
 	}
-	  
-	// if(strcmp(from_client, "exit game\n") == 0)
-	// 	return -1;
-
-	// int column = stoi(from_client);
-	// printf("%d\n", column);
-	// if(isValid(column) == 3){
-	// 	strcpy(to_client, "Column out of range. Try another one");
- //        write(fd, to_client, strlen(to_client));
- //        return -2;
-	// }
-	// if(isValid(column) == 2){
-	// 	strcpy(to_client, "Full column. Try another one");
- //        write(fd, to_client, strlen(to_client));
- //        return -2;
-	// }
-	// if(isValid(column)){
-	// 	Update_Board(player, column);
-	// 	if(isConnect()){
-	// 		strcpy(to_client, "Congrats! You win the game!");
-	//         write(fd, to_client, strlen(to_client));
-	//         strcpy(to_client, Convert_Board(board).c_str());
-	// 		write(fd, to_client, strlen(to_client));
-	//         return -3;
-	// 	}
-	// 	strcpy(to_client, "Move done. Wait for the other player to make a move!");
-	// 	bytes = Convert_Board(board).size();
-	// }
-
-	// printf("The client with this descriptor %d made this move: %d\n", fd, column);
- // 	if(bytes && write(fd, Convert_Board(board).c_str(), bytes) < 0){ //send updated board
- //        perror ("[server] Eroare la write() catre client.\n");
- //        return 0;
- //    }
- //    if(strlen(to_client) && write(fd, to_client, strlen(to_client)) < 0){ //send message
- //    	perror ("[server] Eroare la write() catre client.\n");
- //        return 0;
- //    }
-
- //    if(fd % 2 == 1){
- //    	printf("OK1\n");
-	//     if(bytes && write(fd - 1, Convert_Board(board).c_str(), bytes) < 0){
-	//         perror ("[server] Eroare la write() catre client.\n");
-	//         return 0;
-	//     }
- //    } else {
- //    	printf("OK2\n");
- //    	if(bytes && write(fd + 1, Convert_Board(board).c_str(), bytes) < 0){
-	//         perror ("[server] Eroare la write() catre client.\n");
-	//         return 0;
-	//     }
- //    } 
-
- //    return bytes;
+	printf("%sAAAA\n", from_client);
 	if(strcmp(from_client, "exit game\n") == 0) //lived the game
 		return -1;
 
 	if(isdigit(from_client[0])){
 		int column = atoi(from_client);
-		if(isValid(column) == 3){
-			strcpy(to_client, "Column out of range. Try another one");
-			printf("%s\n", to_client);
-	        write(fd, to_client, strlen(to_client));
-	        return -2;
-		}
-		if(isValid(column) == 2){
-			strcpy(to_client, "Full column. Try another one");printf("%s\n", to_client);
-	        write(fd, to_client, strlen(to_client));
-	        return -2;
-		}
+		// if(isValid(column) == 3){
+		// 	strcpy(to_client, "Column out of range. Try another one");
+		// 	printf("%s\n", to_client);
+	 //        write(fd, to_client, strlen(to_client));
+	 //        return -2;
+		// }
+		// if(isValid(column) == 2){
+		// 	strcpy(to_client, "Full column. Try another one");printf("%s\n", to_client);
+	 //        write(fd, to_client, strlen(to_client));
+	 //        return -2;
+		// }
 		if(isValid(column)){
 			Update_Board(player, column);
 			if(isConnect()){
@@ -233,23 +182,23 @@ int Client_Communication(int fd, char player){
 	        return 0;
 	    }
 
-	    if(fd % 2 == 1){
-	    	strcpy(to_client, "ok");
-	    	write(fd, to_client, strlen(to_client));
-	    	printf("OK1\n");
-		    if(bytes && write(fd - 1, Convert_Board(board).c_str(), bytes) < 0){
-		        perror ("[server] Eroare la write() catre client.\n");
-		        return 0;
-		    }
-	    } else {
-	    	strcpy(to_client, "ok");
-	    	write(fd, to_client, strlen(to_client));
-	    	printf("OK2\n");
-	    	if(bytes && write(fd + 1, Convert_Board(board).c_str(), bytes) < 0){
-		        perror ("[server] Eroare la write() catre client.\n");
-		        return 0;
-		    }
-	    } 
+	    // if(fd % 2 == 1){
+	    // 	strcpy(to_client, "ok");
+	    // 	write(fd, to_client, strlen(to_client));
+	    // 	printf("OK1\n");
+		   //  if(bytes && write(fd - 1, Convert_Board(board).c_str(), bytes) < 0){
+		   //      perror ("[server] Eroare la write() catre client.\n");
+		   //      return 0;
+		   //  }
+	    // } else {
+	    // 	strcpy(to_client, "ok");
+	    // 	write(fd, to_client, strlen(to_client));
+	    // 	printf("OK2\n");
+	    // 	if(bytes && write(fd + 1, Convert_Board(board).c_str(), bytes) < 0){
+		   //      perror ("[server] Eroare la write() catre client.\n");
+		   //      return 0;
+		   //  }
+	    // } 
 	    ok = 1;
 		return bytes;
 	}
@@ -349,7 +298,7 @@ int main(){
         }
 
         if(nfds > 3 and nfds % 2 == 1 && !v[nfds - 1] && !v[nfds]){
-        	printf("Nr clienti %d\n", nfds);
+        	// printf("Nr clienti %d\n", nfds);
         	v[nfds - 1] = 1;
 			v[nfds] = 1;
         	if((childpid = fork()) == 0){
@@ -363,10 +312,10 @@ int main(){
         		Init_Board(board);
         		printf("Game started between clients with descriptors %d and %d\n", player1_fd, player2_fd);
         		int start_game = 1;
-        		printf("%d\n", start_game);
+        		// printf("%d\n", start_game);
         		while(1){
         			if(player1_turn == 1){
-        				// int verify = 0;
+        				ok = 0;
         				if(player1_fd != sd){
         					if(start_game == 1){
         						strcpy(message, "You are first");printf("%s\n", message);
@@ -385,8 +334,9 @@ int main(){
 	    							perror ("[server] Error write() to client.\n");
 									return 0;
 	    						}
-        						start_game = 0;
+        						start_game = 0;printf("%dAA\n", start_game);
         					}
+        					printf("BLA\n");
         					// printf("bla %d bla\n", Client_Communication(player1_fd, player1_color));
         					strcpy(message, "Is your turn. Make a move");printf("%s\n", message);
     						if(write(player1_fd, message, 100) < 0){
