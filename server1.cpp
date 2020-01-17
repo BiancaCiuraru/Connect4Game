@@ -146,6 +146,7 @@ int Client_Communication(int fd, char color){
 	char to_client[200]=" ";
 
 	change_turn = 0;
+	bzero(from_client, 200);
 	bytes = read(fd, from_client, sizeof (buffer));
 	if (bytes < 0)
 	{
@@ -155,6 +156,8 @@ int Client_Communication(int fd, char color){
 	printf ("[server]Mesajul a fost receptionat...%s\n", from_client);
       
     if(strcmp(from_client, "exit game\n") == 0){ //player exit game
+    	strcpy(to_client, "You left the game");
+    	write(fd, to_client, strlen(to_client));
     	if(fd%2 == 0){
     		strcpy(to_client, "Game over. Player1 left the game"); //send message to oponent
     		write(fd + 1, to_client, strlen(to_client));
