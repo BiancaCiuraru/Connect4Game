@@ -10,7 +10,6 @@
 #include <sys/wait.h>
 #include <iostream>
 #include <fstream>
-#include <algorithm>
 
 #define PORT 3000
 using namespace std;
@@ -145,7 +144,7 @@ int Client_Communication(int fd, char color){
 	char buffer[1000];
 	int bytes;
 	char from_client[100];
-	char to_client[100]=" ";
+	char to_client[200]=" ";
 
 	change_turn = 0;
 	bytes = read(fd, from_client, sizeof (buffer));
@@ -185,17 +184,58 @@ int Client_Communication(int fd, char color){
 		if(isValid(column)){
 			Update_Board(color, column);
 			if(isConnect()){
-				strcpy(to_client, "You win the game");
+				strcpy(to_client, "You win the game. Do you want to play a new reprise? Type [yes/no]");
 		   		write(fd, to_client, strlen(to_client));
-				if(fd%2 == 0){
-		    		strcpy(to_client, "Game over. Player1 win the game");
-		    		write(fd + 1, to_client, strlen(to_client));
+		   		read(fd, from_client, 100);
+		    	if(strcmp(from_client, "yes\n") == 0){
+		    		if(fd%2 == 0){
+			    		strcpy(to_client, "Game over. Player1 win the game and he want to play again. Do you want to play a new reprise? Type [yes/no]");
+			    		write(fd + 1, to_client, strlen(to_client));
+			    		read(fd + 1, from_client, 100);
+			    		if(strcmp(from_client, "yes\n") == 0){
+			    			strcpy(to_client, "Your oponent want a new game. Start Game!");
+		   					write(fd, to_client, strlen(to_client));
+			    			return -3;
+			    		}
+			    		else{
+			    			strcpy(to_client, "Your oponent don't want a new game. Game over!");
+		   					write(fd, to_client, strlen(to_client));
+		   					strcpy(to_client, "Game Over!");
+		   					write(fd + 1, to_client, strlen(to_client));
+			    			return -4;
+			    		}
+			    	}
+			    	else {
+			    		strcpy(to_client, "Game over. Player2 win the game and he want to play again. Do you want to play a new reprise? Type [yes/no]");
+			    		write(fd - 1, to_client, strlen(to_client));
+			    		read(fd - 1, from_client, 100);
+			    		if(strcmp(from_client, "yes\n") == 0){
+			    			strcpy(to_client, "Your oponent want a new game. Start Game!");
+		   					write(fd, to_client, strlen(to_client));
+			    			return -3;
+			    		}
+			    		else{
+			    			strcpy(to_client, "Your oponent don't want a new game. Game over!");
+		   					write(fd, to_client, strlen(to_client));
+		   					strcpy(to_client, "Game Over!");
+		   					write(fd - 1, to_client, strlen(to_client));
+			    			return -4;
+			    		}
+			    	}
 		    	}
-		    	else {
-		    		strcpy(to_client, "Game over. Player2 win the game");
-		    		write(fd - 1, to_client, strlen(to_client));
+		    	else{
+		    		strcpy(to_client, "Game Over!");
+		   			write(fd, to_client, strlen(to_client));
+		    		if(fd%2 == 0){
+			    		strcpy(to_client, "Game over. Player1 win the game and he don't want to play again. Game over!");
+			    		write(fd + 1, to_client, strlen(to_client));
+			    	}
+			    	else {
+			    		strcpy(to_client, "Game over. Player2 win the game and he don't want to play again. Game over!");
+			    		write(fd - 1, to_client, strlen(to_client));
+			    	}
+			    	return -4;
 		    	}
-		    	return -1;
 			}
 			strcpy(to_client, "Move done. Wait for your oponent to make a move!");
 			write(fd, to_client, strlen(to_client));
@@ -233,6 +273,9 @@ int main(){
 	int player2_fd;
 	int player2_turn;
 	int player2_color;
+	int player1_scor;
+	int player2_scor;
+	int nr_reprize;
 
 	/* creare socket */
 	if((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
@@ -323,73 +366,128 @@ int main(){
 
 			if((child = fork() == 0)){
 				player1_fd = nfds - 1;
-				player1_turn = 1;
-	        	player1_color = 'r';
         		player2_fd = nfds;
-        		player2_turn = 0;
-        		player2_color = 'y';
+        		player1_scor = 0;
+        		player2_scor = 0;
+        		nr_reprize = 0;
 
-        		Init_Board(board);
-				bzero(message, 100);
-        		strcpy(message, "You are the first player");
-        		printf("%d\n", strlen(message));
-				write(player1_fd, message, strlen(message));
-        		strcpy(message, "You are the second player. Wait for your oponent to make move!");
-				write(player2_fd, message, strlen(message));
-        		
-        		printf("Game started between clients with descriptors %d and %d\n", player1_fd, player2_fd);
-        		close(sd);
-        		while(1){
-        			if(player1_turn == 1){
-        				if(player1_fd != sd){
-        					bzero(message, 100);
-        					strcpy(message, "It's your turn!");
-        					write(player1_fd, message, strlen(message));
-        					int bytes = Convert_Board(board).size();
-							if(bytes && write(player1_fd, Convert_Board(board).c_str(), bytes) < 0){
-								perror ("[server] Error write() to client.\n");
-								return 0;
-							}
-        					if(Client_Communication(player1_fd, player1_color) == -1){
-        						close(player1_fd);
-                                FD_CLR(player1_fd, &actfds);
-                                close(player2_fd);
-                                FD_CLR(player2_fd, &actfds);
-                                clients[player1_fd] = clients[player2_fd] = 0;
-								exit(0);
-        					}
-        					else if(change_turn){
-        						player1_turn = 0;
-        						player2_turn = 1;
-        						change_turn = 0;
-        					}
-        				}
-        			}
-        			else {
-        				if(player2_fd != sd){
-        					bzero(message, 100);
-        					strcpy(message, "It's your turn!");
-        					write(player2_fd, message, strlen(message));
-        					int bytes = Convert_Board(board).size();
-							if(bytes && write(player2_fd, Convert_Board(board).c_str(), bytes) < 0){
-								perror ("[server] Error write() to client.\n");
-								return 0;
-							}
-        					if(Client_Communication(player2_fd, player2_color) == -1){
-        						close(player2_fd);
-                                FD_CLR(player2_fd, &actfds);
-                                close(player1_fd);
-                                FD_CLR(player1_fd, &actfds);
-                                clients[player1_fd] = clients[player2_fd] = 0;
-								exit(0);
-        					}
-        					else if(change_turn){
-        						player2_turn = 0;
-        						player1_turn = 1;
-        						change_turn = 0;
-        					}
-        				}
-        			}
+        		int new_reprise = 1;
+        		while(new_reprise){
+        			int i = rand()%2;
+					player1_turn = i;
+					player2_turn = (i + 1)%2;
+
+					i = rand()%2;
+					if(i){
+						player1_color = 'r';
+						player2_color = 'y';
+					}else{
+						player1_color = 'y';
+						player2_color = 'r';
+					}
+        			Init_Board(board);
+					// bzero(message, 100);
+	        		strcpy(message, "You are the first player");
+					write(player1_fd, message, strlen(message));
+	        		strcpy(message, "You are the second player. Wait for your oponent to make move!");
+					write(player2_fd, message, strlen(message));
+	        		
+	        		printf("Game started between clients with descriptors %d and %d\n", player1_fd, player2_fd);
+	        		close(sd);
+	        		while(1){
+	        			if(player1_turn == 1){
+	        				if(player1_fd != sd){
+	        					bzero(message, 100);
+	        					strcpy(message, "It's your turn!");
+	        					write(player1_fd, message, strlen(message));
+	        					int bytes = Convert_Board(board).size();
+								if(bytes && write(player1_fd, Convert_Board(board).c_str(), bytes) < 0){
+									perror ("[server] Error write() to client.\n");
+									return 0;
+								}
+								int resp = Client_Communication(player1_fd, player1_color);
+	        					if(resp == -1){ //exit game
+	        						close(player1_fd);
+	                                FD_CLR(player1_fd, &actfds);
+	                                close(player2_fd);
+	                                FD_CLR(player2_fd, &actfds);
+	                                clients[player1_fd] = clients[player2_fd] = 0;
+									exit(0);
+	        					}
+	        					else if(resp == -3){ //new reprise
+	        						player1_scor++;
+	        						nr_reprize++;
+	        						break;
+	        // 						close(player1_fd);
+	        //                         FD_CLR(player1_fd, &actfds);
+	        //                         close(player2_fd);
+	        //                         FD_CLR(player2_fd, &actfds);
+	        //                         clients[player1_fd] = clients[player2_fd] = 0;
+									// exit(0);
+	        					}
+	        					else if(resp == -4){
+	        						close(player1_fd);
+	                                FD_CLR(player1_fd, &actfds);
+	                                close(player2_fd);
+	                                FD_CLR(player2_fd, &actfds);
+	                                clients[player1_fd] = clients[player2_fd] = 0;
+									new_reprise = 0;
+									exit(0);
+	        					}
+	        					else if(change_turn){
+	        						player1_turn = 0;
+	        						player2_turn = 1;
+	        						change_turn = 0;
+	        					}
+	        				}
+	        			}
+	        			else {
+	        				if(player2_fd != sd){
+	        					bzero(message, 100);
+	        					strcpy(message, "It's your turn!");
+	        					write(player2_fd, message, strlen(message));
+	        					int bytes = Convert_Board(board).size();
+								if(bytes && write(player2_fd, Convert_Board(board).c_str(), bytes) < 0){
+									perror ("[server] Error write() to client.\n");
+									return 0;
+								}
+								int resp = Client_Communication(player2_fd, player2_color);
+	        					if(resp == -1){
+	        						close(player2_fd);
+	                                FD_CLR(player2_fd, &actfds);
+	                                close(player1_fd);
+	                                FD_CLR(player1_fd, &actfds);
+	                                clients[player1_fd] = clients[player2_fd] = 0;
+									exit(0);
+	        					}
+	        					else if(resp == -3){ //new reprise
+	        						player2_scor++;
+	        						nr_reprize++;
+	        						break;
+	        // 						close(player1_fd);
+	        //                         FD_CLR(player1_fd, &actfds);
+	        //                         close(player2_fd);
+	        //                         FD_CLR(player2_fd, &actfds);
+	        //                         clients[player1_fd] = clients[player2_fd] = 0;
+									// exit(0);
+	        					}
+	        					else if(resp == -4){
+	        						close(player2_fd);
+	                                FD_CLR(player2_fd, &actfds);
+	                                close(player1_fd);
+	                                FD_CLR(player1_fd, &actfds);
+	                                clients[player1_fd] = clients[player2_fd] = 0;
+									new_reprise = 0;
+									exit(0);
+	        					}
+	        					else if(change_turn){
+	        						player2_turn = 0;
+	        						player1_turn = 1;
+	        						change_turn = 0;
+	        					}
+	        				}
+	        			}
+	        		}
         		}
 			}
 		}
