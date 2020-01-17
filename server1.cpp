@@ -18,6 +18,7 @@ extern int errno;
 
 char board[6][7];
 char message[250];
+int change_turn = 0;
 
 void Init_Board(char board[6][7]){
 	int i, j;
@@ -138,8 +139,6 @@ char * conv_addr(struct sockaddr_in address)
     return (str);
 }
 
-int change_turn = 0;
-
 int Client_Communication(int fd, char color){
 	char buffer[1000];
 	int bytes;
@@ -155,13 +154,13 @@ int Client_Communication(int fd, char color){
 	}
 	printf ("[server]Mesajul a fost receptionat...%s\n", from_client);
       
-    if(strcmp(from_client, "exit game\n") == 0){
+    if(strcmp(from_client, "exit game\n") == 0){ //player exit game
     	if(fd%2 == 0){
-    		strcpy(to_client, "Game over. Player1 left the game");
+    		strcpy(to_client, "Game over. Player1 left the game"); //send message to oponent
     		write(fd + 1, to_client, strlen(to_client));
     	}
     	else {
-    		strcpy(to_client, "Game over. Player2 left the game");
+    		strcpy(to_client, "Game over. Player2 left the game"); //send message to oponent
     		write(fd - 1, to_client, strlen(to_client));
     	}
     	return -1;
@@ -171,13 +170,11 @@ int Client_Communication(int fd, char color){
 		int column = atoi(from_client);
 		if(isValid(column) == 3){
 			strcpy(to_client, "Column out of range. Try another one!");
-			printf("%s\n", to_client);
 	        write(fd, to_client, strlen(to_client));
 	        return -2;
 		}
 		if(isValid(column) == 2){
 			strcpy(to_client, "Full column. Try another one!");
-			printf("%s\n", to_client);
 	        write(fd, to_client, strlen(to_client));
 	        return -2;
 		}
@@ -187,17 +184,17 @@ int Client_Communication(int fd, char color){
 				strcpy(to_client, "You win the game. Do you want to play a new reprise? Type [yes/no]");
 		   		write(fd, to_client, strlen(to_client));
 		   		read(fd, from_client, 100);
-		    	if(strcmp(from_client, "yes\n") == 0){
-		    		if(fd%2 == 0){
+		    	if(strcmp(from_client, "yes\n") == 0){ //player win and accept new reprise
+		    		if(fd%2 == 0){ //is first player
 			    		strcpy(to_client, "Game over. Player1 win the game and he want to play again. Do you want to play a new reprise? Type [yes/no]");
 			    		write(fd + 1, to_client, strlen(to_client));
 			    		read(fd + 1, from_client, 100);
-			    		if(strcmp(from_client, "yes\n") == 0){
-			    			strcpy(to_client, "Your oponent want a new game. Start Game!");
+			    		if(strcmp(from_client, "yes\n") == 0){ //oponent accept new reprise
+			    			strcpy(to_client, "Your oponent want a new game. Start Game!"); 
 		   					write(fd, to_client, strlen(to_client));
 			    			return -3;
 			    		}
-			    		else{
+			    		else{ //oponent refuse new reprize
 			    			strcpy(to_client, "Your oponent don't want a new game. Game over!");
 		   					write(fd, to_client, strlen(to_client));
 		   					strcpy(to_client, "Game Over!");
@@ -205,7 +202,7 @@ int Client_Communication(int fd, char color){
 			    			return -4;
 			    		}
 			    	}
-			    	else {
+			    	else { //is second player
 			    		strcpy(to_client, "Game over. Player2 win the game and he want to play again. Do you want to play a new reprise? Type [yes/no]");
 			    		write(fd - 1, to_client, strlen(to_client));
 			    		read(fd - 1, from_client, 100);
@@ -223,10 +220,10 @@ int Client_Communication(int fd, char color){
 			    		}
 			    	}
 		    	}
-		    	else{
+		    	else{ //player win and refuse new reprise
 		    		strcpy(to_client, "Game Over!");
 		   			write(fd, to_client, strlen(to_client));
-		    		if(fd%2 == 0){
+		    		if(fd%2 == 0){ //send message to oponent
 			    		strcpy(to_client, "Game over. Player1 win the game and he don't want to play again. Game over!");
 			    		write(fd + 1, to_client, strlen(to_client));
 			    	}
@@ -237,7 +234,7 @@ int Client_Communication(int fd, char color){
 			    	return -4;
 		    	}
 			}
-			strcpy(to_client, "Move done. Wait for your oponent to make a move!");
+			strcpy(to_client, "Move done. Wait for your oponent to make a move!"); //valid move, send message
 			write(fd, to_client, strlen(to_client));
 
 			bytes = Convert_Board(board).size();
@@ -248,21 +245,25 @@ int Client_Communication(int fd, char color){
 		    change_turn = 1;
 		}
 	}
+	else {
+		strcpy(to_client, "Command not found. Try another one!"); //command is not for exit or for move or for new reprise
+        write(fd, to_client, strlen(to_client));
+        return -2;
+	}
 	return bytes;
 }
 
 int main(){
-	struct sockaddr_in server;	/* structurile pentru server si clienti */
+	struct sockaddr_in server;
 	struct sockaddr_in from;
-	fd_set readfds;		/* multimea descriptorilor de citire */
-	fd_set actfds;		/* multimea descriptorilor activi */
-	struct timeval tv;		/* structura de timp pentru select() */
-	int sd, client;		/* descriptori de socket */
-	int optval=1; 			/* optiune folosita pentru setsockopt()*/ 
-	int fd;			/* descriptor folosit pentru 
-				   parcurgerea listelor de descriptori */
-	int nfds;			/* numarul maxim de descriptori */
-	unsigned int len;			/* lungimea structurii sockaddr_in */
+	fd_set readfds;	
+	fd_set actfds;	
+	struct timeval tv;
+	int sd, client;	
+	int optval=1; 	
+	int fd;
+	int nfds;	
+	unsigned int len;
 	pid_t child;
 	char message[250];
 	int clients[250] = {0};
@@ -277,95 +278,79 @@ int main(){
 	int player2_scor;
 	int nr_reprize;
 
-	/* creare socket */
-	if((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-	  perror ("[server] Eroare la socket().\n");
-	  return errno;
+		perror("[server] Eroare la socket().\n");
+		return errno;
 	}
 
-	/*setam pentru socket optiunea SO_REUSEADDR */ 
-	setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,&optval,sizeof(optval));
+	setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
-	/* pregatim structurile de date */
-	bzero (&server, sizeof (server));
+	bzero(&server, sizeof (server));
 
-	/* umplem structura folosita de server */
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = htonl (INADDR_ANY);
 	server.sin_port = htons (PORT);
 
-	/* atasam socketul */
-	if (bind (sd, (struct sockaddr *) &server, sizeof (struct sockaddr)) == -1)
+	if(bind(sd, (struct sockaddr *) &server, sizeof(struct sockaddr)) == -1)
 	{
-	  perror ("[server] Eroare la bind().\n");
-	  return errno;
+		perror ("[server] Eroare la bind().\n");
+		return errno;
 	}
 
-	/* punem serverul sa asculte daca vin clienti sa se conecteze */
-	if (listen (sd, 5) == -1)
+	if(listen(sd, 5) == -1)
 	{
-	  perror ("[server] Eroare la listen().\n");
-	  return errno;
+		perror ("[server] Eroare la listen().\n");
+		return errno;
 	}
 
-	/* completam multimea de descriptori de citire */
-	FD_ZERO (&actfds);		/* initial, multimea este vida */
-	FD_SET (sd, &actfds);		/* includem in multime socketul creat */
+	FD_ZERO (&actfds);
+	FD_SET (sd, &actfds);
 
-	tv.tv_sec = 1;		/* se va astepta un timp de 1 sec. */
+	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 
-	/* valoarea maxima a descriptorilor folositi */
 	nfds = sd;
 
-	printf ("[server] Asteptam la portul %d...\n", PORT);
-	fflush (stdout);
-	    
-	/* servim in mod concurent clientii... */
-	while (1)
+	printf("[server] Asteptam la portul %d...\n", PORT);
+	fflush(stdout);
+	   
+	while(1)
 	{
-	  /* ajustam multimea descriptorilor activi (efectiv utilizati) */
-		bcopy ((char *) &actfds, (char *) &readfds, sizeof (readfds));
+		bcopy((char *) &actfds, (char *) &readfds, sizeof(readfds));
 
-		/* apelul select() */
-		if (select (nfds+1, &readfds, NULL, NULL, &tv) < 0)
+		if(select(nfds+1, &readfds, NULL, NULL, &tv) < 0)
 		{
-		perror ("[server] Eroare la select().\n");
-		return errno;
-		}
-		/* vedem daca e pregatit socketul pentru a-i accepta pe clienti */
-		if (FD_ISSET (sd, &readfds))
-		{
-		/* pregatirea structurii client */
-		len = sizeof (from);
-		bzero (&from, sizeof (from));
-
-		/* a venit un client, acceptam conexiunea */
-		client = accept (sd, (struct sockaddr *) &from, &len);
-
-		/* eroare la acceptarea conexiunii de la un client */
-		if (client < 0)
-		{
-		  perror ("[server] Eroare la accept().\n");
-		  continue;
+			perror("[server] Eroare la select().\n");
+			return errno;
 		}
 
-		  if (nfds < client) /* ajusteaza valoarea maximului */
-		    nfds = client;
+		if(FD_ISSET(sd, &readfds))
+		{
+			len = sizeof(from);
+			bzero(&from, sizeof(from));
+
+			client = accept(sd, (struct sockaddr *) &from, &len);
+			if(client < 0)
+			{
+				perror("[server] Eroare la accept().\n");
+				continue;
+			}
+
+		  	if (nfds < client)
+		    	nfds = client;
 		    
-		/* includem in lista de descriptori activi si acest socket */
-		FD_SET (client, &actfds);
+			FD_SET(client, &actfds);
 
-		printf("[server] S-a conectat clientul cu descriptorul %d, de la adresa %s.\n",client, conv_addr (from));
-		fflush (stdout);
+			printf("[server] S-a conectat clientul cu descriptorul %d, de la adresa %s.\n", client, conv_addr(from));
+			fflush(stdout);
 		}
 
-		if(nfds%2 == 1 && nfds > 3 && clients[nfds] == 0 && clients[nfds - 1] == 0){
-			clients[nfds] = clients[nfds - 1] = 1;
+		if(nfds%2 == 1 && nfds > 3 && clients[nfds] == 0 && clients[nfds - 1] == 0){ //nfds starts from 4
+			clients[nfds] = clients[nfds - 1] = 1; //this clients were visited
 
-			if((child = fork() == 0)){
-				player1_fd = nfds - 1;
+			if((child = fork() == 0)){ //start process
+				player1_fd = nfds - 1; //set players descriptors
         		player2_fd = nfds;
         		player1_scor = 0;
         		player2_scor = 0;
@@ -373,7 +358,7 @@ int main(){
 
         		int new_reprise = 1;
         		while(new_reprise){
-        			int i = rand()%2;
+        			int i = rand()%2; //random turn and color for each player
 					player1_turn = i;
 					player2_turn = (i + 1)%2;
 
@@ -385,8 +370,8 @@ int main(){
 						player1_color = 'y';
 						player2_color = 'r';
 					}
+
         			Init_Board(board);
-					// bzero(message, 100);
 	        		strcpy(message, "You are the first player");
 					write(player1_fd, message, strlen(message));
 	        		strcpy(message, "You are the second player. Wait for your oponent to make move!");
@@ -395,12 +380,12 @@ int main(){
 	        		printf("Game started between clients with descriptors %d and %d\n", player1_fd, player2_fd);
 	        		close(sd);
 	        		while(1){
-	        			if(player1_turn == 1){
-	        				if(player1_fd != sd){
+	        			if(player1_turn == 1){ //is his turn
+	        				if(player1_fd != sd){ //different from socket 
 	        					bzero(message, 100);
 	        					strcpy(message, "It's your turn!");
-	        					write(player1_fd, message, strlen(message));
-	        					int bytes = Convert_Board(board).size();
+	        					write(player1_fd, message, strlen(message)); //send turn message + board
+	        					int bytes = Convert_Board(board).size(); 
 								if(bytes && write(player1_fd, Convert_Board(board).c_str(), bytes) < 0){
 									perror ("[server] Error write() to client.\n");
 									return 0;
@@ -414,18 +399,12 @@ int main(){
 	                                clients[player1_fd] = clients[player2_fd] = 0;
 									exit(0);
 	        					}
-	        					else if(resp == -3){ //new reprise
+	        					else if(resp == -3){ //win with new reprise
 	        						player1_scor++;
 	        						nr_reprize++;
 	        						break;
-	        // 						close(player1_fd);
-	        //                         FD_CLR(player1_fd, &actfds);
-	        //                         close(player2_fd);
-	        //                         FD_CLR(player2_fd, &actfds);
-	        //                         clients[player1_fd] = clients[player2_fd] = 0;
-									// exit(0);
 	        					}
-	        					else if(resp == -4){
+	        					else if(resp == -4){ //win without new reprise
 	        						close(player1_fd);
 	                                FD_CLR(player1_fd, &actfds);
 	                                close(player2_fd);
@@ -434,7 +413,7 @@ int main(){
 									new_reprise = 0;
 									exit(0);
 	        					}
-	        					else if(change_turn){
+	        					else if(change_turn){ //pass turn to oponent
 	        						player1_turn = 0;
 	        						player2_turn = 1;
 	        						change_turn = 0;
@@ -464,12 +443,6 @@ int main(){
 	        						player2_scor++;
 	        						nr_reprize++;
 	        						break;
-	        // 						close(player1_fd);
-	        //                         FD_CLR(player1_fd, &actfds);
-	        //                         close(player2_fd);
-	        //                         FD_CLR(player2_fd, &actfds);
-	        //                         clients[player1_fd] = clients[player2_fd] = 0;
-									// exit(0);
 	        					}
 	        					else if(resp == -4){
 	        						close(player2_fd);
@@ -491,22 +464,5 @@ int main(){
         		}
 			}
 		}
-
-		/* vedem daca e pregatit vreun socket client pentru a trimite raspunsul */
-		// for (fd = 0; fd <= nfds; fd++)	/* parcurgem multimea de descriptori */
-		// {
-		// /* este un socket de citire pregatit? */
-		// if (fd != sd && FD_ISSET (fd, &readfds))
-		// {	
-		//   if (sayHello(fd))
-		// {
-		//   printf ("[server] S-a deconectat clientul cu descriptorul %d.\n",fd);
-		//   fflush (stdout);
-		//   close (fd);		/* inchidem conexiunea cu clientul */
-		//   FD_CLR (fd, &actfds);/* scoatem si din multime */
-		  
-		// }
-		// }
-		// }			/* for */
 	}			
 }
