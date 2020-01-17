@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
                 return errno;
             }
         }
-        
+
         if(strcmp(from_server, "Move done. Wait for your oponent to make a move!") == 0){
             printf("%s\n", from_server);
             board_message.resize(100);
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]){
             }
         }
 
-        if(strcmp(from_server, "Game Over!") == 0 ||strcmp(from_server, "Game over. Player1 left the game") == 0 || strcmp(from_server, "Game over. Player2 left the game") == 0 || strcmp(from_server, "Game over. Player1 win the game and he don't want to play again. Game over!") == 0 || strcmp(from_server, "Game over. Player2 win the game and he don't want to play again. Game over!") == 0){
+        if(strcmp(from_server, "You left the game") == 0 || strcmp(from_server, "Game Over!") == 0 ||strcmp(from_server, "Game over. Player1 left the game") == 0 || strcmp(from_server, "Game over. Player2 left the game") == 0 || strcmp(from_server, "Game over. Player1 win the game and he don't want to play again. Game over!") == 0 || strcmp(from_server, "Game over. Player2 win the game and he don't want to play again. Game over!") == 0){
             printf("%s\n", from_server);
             break;
         }
