@@ -16,7 +16,7 @@ extern int errno;
 using namespace std;
 int port; 
 
-void Convert_Board(char a[6][7], string s){
+void Convert_Board(char a[6][7], string s){ //convert string from server into board matrix
     int i, j, k = 0;
     for(i = 0; i < 6; i++) {
         for(j = 0; j < 7; j++)
@@ -24,7 +24,7 @@ void Convert_Board(char a[6][7], string s){
     }
 }
 
-void Print_Board(char A[7][7]){
+void Print_Board(char A[7][7]){ //print board and number columns
     int i, j;
 
     for(i = 0; i < 6; i++) {
@@ -48,16 +48,16 @@ int main(int argc, char *argv[]){
 
     if(argc != 3)
     {
-      printf ("[client] Sintaxa: %s <adresa_server> <port>\n", argv[0]);
-      return -1;
+        printf("[client] Sintaxa: %s <adresa_server> <port>\n", argv[0]);
+        return -1;
     }
 
-    port = atoi (argv[2]);
+    port = atoi(argv[2]);
 
-    if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+    if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
-      perror ("[client] Eroare la socket().\n");
-      return errno;
+        perror("[client] Eroare la socket().\n");
+        return errno;
     }
 
     server.sin_family = AF_INET;
@@ -66,14 +66,14 @@ int main(int argc, char *argv[]){
 
     if(connect(sd, (struct sockaddr *)&server, sizeof(struct sockaddr)) == -1)
     {
-      perror("[client]Eroare la connect().\n");
-      return errno;
+        perror("[client]Eroare la connect().\n");
+        return errno;
     }
 
     char board[6][7];
     bzero(to_server, 200);
     bzero(from_server, 200);
-    if(read(sd, from_server, 200) < 0)
+    if(read(sd, from_server, 200) < 0) //read start game messages
     {
         perror("[client]Eroare la read() de la server.\n");
         return errno;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
     printf("%s\n", from_server);
 
     while(1){
-        bzero(to_server, 200);
+        bzero(to_server, 200); //clear buffer
         bzero(from_server, 200);
 
         if(read(sd, from_server, 200) < 0)
@@ -99,15 +99,15 @@ int main(int argc, char *argv[]){
             }
             Convert_Board(board, board_message);
             Print_Board(board);
-            cout << endl;
+            printf("\n");
             printf("%s\n", from_server);
             printf("Enter your move: ");
             fflush(stdout);
             read(0, to_server, 100);
             if(write(sd, to_server, strlen(to_server)) <= 0)
             {
-              perror ("[client]Eroare la write() spre server.\n");
-              return errno;
+                perror ("[client]Eroare la write() spre server.\n");
+                return errno;
             }
         }
 
@@ -118,10 +118,11 @@ int main(int argc, char *argv[]){
             read(0, to_server, 100);
             if(write(sd, to_server, strlen(to_server)) <= 0)
             {
-              perror ("[client]Eroare la write() spre server.\n");
-              return errno;
+                perror ("[client]Eroare la write() spre server.\n");
+                return errno;
             }
         }
+        
         if(strcmp(from_server, "Move done. Wait for your oponent to make a move!") == 0){
             printf("%s\n", from_server);
             board_message.resize(100);
@@ -132,8 +133,9 @@ int main(int argc, char *argv[]){
             }
             Convert_Board(board, board_message);
             Print_Board(board);
-            cout << endl;
+            printf("\n");
         }
+
         if(strcmp(from_server, "You win the game. Do you want to play a new reprise? Type [yes/no]") == 0 || strcmp(from_server, "Game over. Player1 win the game and he want to play again. Do you want to play a new reprise? Type [yes/no]") == 0 || strcmp(from_server, "Game over. Player2 win the game and he want to play again. Do you want to play a new reprise? Type [yes/no]") == 0)
         {
             printf("%s: ", from_server);
@@ -141,8 +143,8 @@ int main(int argc, char *argv[]){
             read(0, to_server, 200);
             if(write(sd, to_server, strlen(to_server)) <= 0)
             {
-              perror ("[client]Eroare la write() spre server.\n");
-              return errno;
+                perror ("[client]Eroare la write() spre server.\n");
+                return errno;
             }
             bzero(from_server, 200);
             bzero(to_server, 200);
